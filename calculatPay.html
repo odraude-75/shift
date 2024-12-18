@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Schedule Pay Calculator</title>
+</head>
+<body>
+    <h1>Work Schedule Pay Calculator</h1>
+
+    <form id="payForm">
+        <label for="startDay">Start Day:</label>
+        <select id="startDay" required>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+        </select>
+        <br><br>
+
+        <label for="shiftType">First Shift Type:</label>
+        <select id="shiftType" required>
+            <option value="day">Day Shift</option>
+            <option value="night">Night Shift</option>
+        </select>
+        <br><br>
+
+        <label for="hourlyRate">Base Hourly Rate:</label>
+        <input type="number" id="hourlyRate" placeholder="Enter base hourly rate" required>
+        <br><br>
+
+        <button type="submit">Calculate Total Pay</button>
+    </form>
+
+    <h2 id="result"></h2>
+
+    <script>
+        // Function to calculate the yearly pay
+        function calculateYearlyPay(startDay, baseHourlyRate, startShift) {
+            const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            const workCycle = 4; // 4 days on, 4 days off
+            const shiftHours = 11; // 11 hours per shift
+            const totalDays = 365; // Total days in a year
+            let totalPay = 0;
+
+            // Get the index of the starting day
+            let currentDayIndex = daysOfWeek.indexOf(startDay);
+            if (currentDayIndex === -1) {
+                alert("Invalid start day. Please use a valid day of the week.");
+                return;
+            }
+
+            // Function to calculate the hourly rate for a given day
+            function calculateHourlyRate(dayName, isNightShift) {
+                let rate = baseHourlyRate;
+
+                if (["Saturday", "Sunday"].includes(dayName)) {
+                    // Saturdays and Sundays: add 41% or 81%
+                    rate += dayName === "Saturday" ? baseHourlyRate * 0.41 : baseHourlyRate * 0.81;
+                } else if (isNightShift) {
+                    // Night shifts: add 41%
+                    rate += baseHourlyRate * 0.41;
+                }
+
+                return rate;
+            }
+
+            // Loop through all days in the year
+            for (let day = 0; day < totalDays; day++) {
+                // Determine if the day is "on" or "off"
+                let cyclePosition = day % (workCycle * 2); // 8-day cycle
+                let isWorkingDay = cyclePosition < workCycle;
+
+                let isNightShift = false; // Default is day shift
+                if (isWorkingDay) {
+                    // Determine if it's a night shift
+                    if (startShift === "night") {
+                        // Adjust the first cycle to start as a night shift
+                        isNightShift = (cyclePosition === 0 || cyclePosition === 1); // Night shifts on Monday and Tuesday (if started on night)
+                    } else {
+                        // Default: day shift on Monday and Tuesday, night shift on Wednesday and Thursday
+                        isNightShift = (cyclePosition === 2 || cyclePosition === 3); // Wednesday & Thursday are night shifts
+                    }
+
+                    // Calculate hourly rate and daily pay
+                    let hourlyRate = calculateHourlyRate(daysOfWeek[currentDayIndex], isNightShift);
+                    let dailyPay = hourlyRate * shiftHours;
+
+                    // Add daily pay to the total pay
+                    totalPay += dailyPay;
+                }
+
+                // Move to the next day in the week
+                currentDayIndex = (currentDayIndex + 1) % daysOfWeek.length;
+            }
+
+            return totalPay;
+        }
+
+        // Form submission handler
+        document.getElementById("payForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            // Get user input values
+            const startDay = document.getElementById("startDay").value;
+            const shiftType = document.getElementById("shiftType").value;
+            const hourlyRate = parseFloat(document.getElementById("hourlyRate").value);
+
+            if (isNaN(hourlyRate) || hourlyRate <= 0) {
+                alert("Please enter a valid base hourly rate.");
+                return;
+            }
+
+            // Calculate total pay
+            const totalPay = calculateYearlyPay(startDay, hourlyRate, shiftType);
+
+            // Display result
+            document.getElementById("result").innerHTML = `Total pay for the year: $${totalPay.toFixed(2)}`;
+        });
+    </script>
+</body>
+</html>
